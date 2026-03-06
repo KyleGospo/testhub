@@ -82,6 +82,19 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
+      - name: Detect build path
+        id: detect-path
+        run: |
+          if [[ -f "flatpaks/${{ matrix.app }}/release.yaml" ]]; then
+            echo "mode=bundle-repack" >> "$GITHUB_OUTPUT"
+          elif [[ -f "flatpaks/${{ matrix.app }}/manifest.yaml" ]]; then
+            echo "mode=flatpak-builder" >> "$GITHUB_OUTPUT"
+          else
+            echo "ERROR: no manifest.yaml or release.yaml in flatpaks/${{ matrix.app }}/" >&2
+            exit 1
+          fi
+
+      # ── flatpak-builder path (e.g. ghostty) ──────────────────────────────
       # The v6 action:
       #   - runs flatpak-builder with --ccache --disable-rofiles-fuse --force-clean
       #   - caches .flatpak-builder/ via actions/cache
@@ -91,6 +104,7 @@ jobs:
       #   - build-bundle: false → skips bundle step; we export OCI ourselves
       #   - upload-artifact: false → we upload ourselves (correct artifact name per arch)
       - name: Build with flatpak-builder (cached)
+        if: steps.detect-path.outputs.mode == 'flatpak-builder'
         uses: flatpak/flatpak-github-actions/flatpak-builder@92ae9851ad316786193b1fd3f40c4b51eb5cb101 # v6
         with:
           manifest-path: flatpaks/${{ matrix.app }}/manifest.yaml
@@ -100,7 +114,8 @@ jobs:
           cache-key: flatpak-${{ matrix.app }}-${{ matrix.arch }}
           branch: stable
 
-      - name: Export OCI bundle
+      - name: Export OCI bundle (flatpak-builder path)
+        if: steps.detect-path.outputs.mode == 'flatpak-builder'
         run: |
           APP_ID=$(python3 -c "
           import sys
@@ -117,6 +132,73 @@ jobs:
           # Do NOT pass --override-source-date-epoch — that flag belongs to flatpak-builder only
           # SOURCE_DATE_EPOCH=0 env (set at job level) is sufficient for build-bundle
           flatpak build-bundle --oci --arch="${{ matrix.arch }}" repo "${{ matrix.app }}.oci" "${APP_ID}" stable
+
+      # ── Bundle repack path (e.g. goose) ──────────────────────────────────
+      # Downloads upstream .flatpak, verifies sha256, imports into OSTree, exports OCI.
+      # No flatpak-builder invocation — upstream build is trusted as-is.
+      - name: Download and verify upstream bundle
+        if: steps.detect-path.outputs.mode == 'bundle-repack'
+        run: |
+          DESC="flatpaks/${{ matrix.app }}/release.yaml"
+          APP_ID=$(python3 -c "
+          import sys
+          for line in open(sys.argv[1]):
+              line = line.strip()
+              if line.startswith('app-id:'):
+                  print(line.split(':', 1)[1].strip())
+                  break
+          " "${DESC}")
+          VERSION=$(python3 -c "
+          import sys
+          for line in open(sys.argv[1]):
+              line = line.strip()
+              if line.startswith('version:'):
+                  print(line.split(':', 1)[1].strip())
+                  break
+          " "${DESC}")
+          URL=$(python3 -c "
+          import sys
+          for line in open(sys.argv[1]):
+              line = line.strip()
+              if line.startswith('url:'):
+                  print(line.split(':', 1)[1].strip())
+                  break
+          " "${DESC}")
+          EXPECTED_SHA=$(python3 -c "
+          import sys
+          for line in open(sys.argv[1]):
+              line = line.strip()
+              if line.startswith('sha256:'):
+                  print(line.split(':', 1)[1].strip())
+                  break
+          " "${DESC}")
+          [[ -n "${APP_ID}" && -n "${VERSION}" && -n "${URL}" && -n "${EXPECTED_SHA}" ]] \
+            || { echo "ERROR: release.yaml missing required fields" >&2; exit 1; }
+          echo "APP_ID=${APP_ID}" >> "$GITHUB_ENV"
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          BUNDLE_FILE="/tmp/${{ matrix.app }}-${VERSION}.flatpak"
+          echo "BUNDLE_FILE=${BUNDLE_FILE}" >> "$GITHUB_ENV"
+          echo "==> Downloading ${URL}"
+          curl -fsSL -o "${BUNDLE_FILE}" "${URL}"
+          ACTUAL_SHA=$(sha256sum "${BUNDLE_FILE}" | cut -d' ' -f1)
+          if [[ "${ACTUAL_SHA}" != "${EXPECTED_SHA}" ]]; then
+            echo "ERROR: sha256 mismatch" >&2
+            echo "  expected: ${EXPECTED_SHA}" >&2
+            echo "  actual:   ${ACTUAL_SHA}" >&2
+            exit 1
+          fi
+          echo "==> sha256 OK: ${ACTUAL_SHA}"
+
+      - name: Import bundle and export OCI (bundle-repack path)
+        if: steps.detect-path.outputs.mode == 'bundle-repack'
+        run: |
+          ARCH="${{ matrix.arch }}"
+          REF="app/${APP_ID}/${ARCH}/stable"
+          echo "==> Importing ${BUNDLE_FILE} → OSTree ref ${REF}"
+          # --ref: override embedded ref to match our standard naming
+          flatpak build-import-bundle --ref="${REF}" repo "${BUNDLE_FILE}"
+          echo "==> Exporting OCI bundle"
+          flatpak build-bundle --oci --arch="${ARCH}" repo "${{ matrix.app }}.oci" "${APP_ID}" stable
 
       - name: Upload OCI artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
