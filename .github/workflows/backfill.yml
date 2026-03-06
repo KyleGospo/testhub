@@ -100,17 +100,21 @@ jobs:
         run: |
           APP="${{ inputs.app }}"
           INPUT="localhost/${APP}:input"
+          LABELED="localhost/${APP}:labeled"
           CHUNKED="localhost/${APP}:chunked"
 
-          # Pull OCI dir into podman/buildah shared store; tag for stable reference.
-          # podman pull returns a bare digest ID — buildah config can't find it by
-          # digest alone; tagging gives both tools a stable name in the shared store.
+          # Pull OCI dir into the shared podman/buildah store and tag for stable reference.
           IMAGE_ID=$(podman pull --quiet "oci:./${APP}.oci")
           podman tag "${IMAGE_ID}" "${INPUT}"
 
-          # Apply OCI standard labels before capturing CHUNKAH_CONFIG_STR — labels
-          # added after the capture are not reflected in the chunkah output image.
+          # Apply OCI labels via buildah from→config→commit (buildah config requires a
+          # working container, not an image — create one, configure it, then commit back).
           CREATED=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          DESC="flatpaks/${APP}/release.yaml"
+          TITLE=$(yq '.title // ""' "${DESC}")
+          DESCRIPTION=$(yq '.description // ""' "${DESC}")
+          LICENSE=$(yq '.license // ""' "${DESC}")
+          CTR=$(buildah from "${INPUT}")
           buildah config \
             --label "org.opencontainers.image.version=${{ inputs.version }}" \
             --label "org.opencontainers.image.source=${{ inputs.url }}" \
@@ -118,19 +122,18 @@ jobs:
             --label "org.opencontainers.image.vendor=castrojo" \
             --label "org.opencontainers.image.url=https://github.com/castrojo/jorgehub" \
             --label "org.opencontainers.image.revision=${{ github.sha }}" \
-            "${INPUT}"
-          DESC="flatpaks/${APP}/release.yaml"
-          TITLE=$(yq '.title // ""' "${DESC}")
-          DESCRIPTION=$(yq '.description // ""' "${DESC}")
-          LICENSE=$(yq '.license // ""' "${DESC}")
-          [[ -n "${TITLE}" && "${TITLE}" != "null" ]] && buildah config --label "org.opencontainers.image.title=${TITLE}" "${INPUT}" || true
-          [[ -n "${DESCRIPTION}" && "${DESCRIPTION}" != "null" ]] && buildah config --label "org.opencontainers.image.description=${DESCRIPTION}" "${INPUT}" || true
-          [[ -n "${LICENSE}" && "${LICENSE}" != "null" ]] && buildah config --label "org.opencontainers.image.licenses=${LICENSE}" "${INPUT}" || true
+            "${CTR}"
+          [[ -n "${TITLE}" && "${TITLE}" != "null" ]] && buildah config --label "org.opencontainers.image.title=${TITLE}" "${CTR}" || true
+          [[ -n "${DESCRIPTION}" && "${DESCRIPTION}" != "null" ]] && buildah config --label "org.opencontainers.image.description=${DESCRIPTION}" "${CTR}" || true
+          [[ -n "${LICENSE}" && "${LICENSE}" != "null" ]] && buildah config --label "org.opencontainers.image.licenses=${LICENSE}" "${CTR}" || true
+          buildah commit "${CTR}" "${LABELED}"
+          buildah rm "${CTR}"
           echo "==> OCI labels applied"
 
-          # podman inspect produces the array format chunkah's parse_config accepts
+          # podman inspect produces the array format chunkah's parse_config accepts.
+          # Must use LABELED (has labels) not INPUT (pre-label image).
           export CHUNKAH_CONFIG_STR
-          CHUNKAH_CONFIG_STR=$(podman inspect "${INPUT}" | jq -c '.[0]')
+          CHUNKAH_CONFIG_STR=$(podman inspect "${LABELED}" | jq -c '.[0]')
 
           # buildah build --from replaces podman run --mount=type=image (requires
           # capabilities unavailable on non-privileged ubuntu-24.04 runner).
@@ -139,7 +142,7 @@ jobs:
           echo "==> Running chunkah via buildah build"
           buildah build \
             --skip-unused-stages=false \
-            --from "${INPUT}" \
+            --from "${LABELED}" \
             -t "${CHUNKED}" \
             -v "$(pwd):/run/src" \
             --security-opt=label=disable \
