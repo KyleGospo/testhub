@@ -119,13 +119,13 @@ build app="ghostty":
     gh auth token | podman login ghcr.io --username castrojo --password-stdin
     podman push --compression-format=zstd:chunked \
       --digestfile "/tmp/${APP}-ghcr-digest.txt" \
-      "${IMAGE_ID}" "docker://ghcr.io/castrojo/jorgehub/${APP}:latest-${ARCH}"
+      "${IMAGE_ID}" "docker://ghcr.io/castrojo/${APP}:latest-${ARCH}"
     GHCR_DIGEST=$(cat "/tmp/${APP}-ghcr-digest.txt")
     echo "==> ghcr.io digest: ${GHCR_DIGEST}"
     # Verify zstd:chunked
-    skopeo inspect --raw "docker://ghcr.io/castrojo/jorgehub/${APP}:latest-${ARCH}" \
+    skopeo inspect --raw "docker://ghcr.io/castrojo/${APP}:latest-${ARCH}" \
       | jq -r '.layers[] | "Layer: \(.mediaType)  zstd=\(.mediaType | contains("zstd"))  chunked=\(.annotations["io.github.containers.zstd-chunked.manifest"] != null)"'
-    echo "==> Done. ghcr.io/castrojo/jorgehub/${APP}:latest-${ARCH} @ ${GHCR_DIGEST}"
+    echo "==> Done. ghcr.io/castrojo/${APP}:latest-${ARCH} @ ${GHCR_DIGEST}"
 
 # Loop: build + local registry only (no ghcr push) — dev iteration target
 loop app="ghostty":
