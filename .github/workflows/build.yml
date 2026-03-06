@@ -98,6 +98,7 @@ jobs:
           upload-artifact: false
           cache: true
           cache-key: flatpak-${{ matrix.app }}-${{ matrix.arch }}
+          branch: stable
 
       - name: Export OCI bundle
         run: |
