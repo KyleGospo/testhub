@@ -163,7 +163,7 @@ jobs:
         run: |
           ARCH="${{ matrix.arch }}"
           REF="app/${APP_ID}/${ARCH}/stable"
-          ostree init --mode=archive-z2 repo
+          ostree init --mode=archive-z2 --repo=repo
           echo "==> Importing ${BUNDLE_FILE} → OSTree ref ${REF}"
           # --ref: override embedded ref to match our standard naming
           flatpak build-import-bundle --ref="${REF}" repo "${BUNDLE_FILE}"
