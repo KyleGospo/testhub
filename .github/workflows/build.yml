@@ -311,12 +311,63 @@ jobs:
               --compression-format=zstd:chunked \
               "containers-storage:${CHUNKED}" \
               "docker://ghcr.io/${{ github.repository_owner }}/${{ matrix.app }}:${VERSION}-${{ matrix.arch }}"
-            skopeo copy \
-              --compression-format=zstd:chunked \
-              "containers-storage:${CHUNKED}" \
-              "docker://ghcr.io/${{ github.repository_owner }}/${{ matrix.app }}:stable-${{ matrix.arch }}"
-            echo "==> Tags: latest-${{ matrix.arch }}, ${VERSION}-${{ matrix.arch }}, stable-${{ matrix.arch }}"
+            echo "==> Tags: latest-${{ matrix.arch }}, ${VERSION}-${{ matrix.arch }}"
           fi
+
+      - name: Create OCI image indexes
+        run: |
+          APP="${{ matrix.app }}"
+          ARCH="${{ matrix.arch }}"
+          OWNER="${{ github.repository_owner }}"
+          DIGEST=$(cat /tmp/digest.txt)
+          [[ -n "${DIGEST}" ]] || { echo "ERROR: /tmp/digest.txt is empty — per-arch push may have failed" >&2; exit 1; }
+
+          case "${ARCH}" in
+            x86_64)  OCI_ARCH="amd64" ;;
+            aarch64) OCI_ARCH="arm64" ;;
+            *)       OCI_ARCH="${ARCH}" ;;
+          esac
+
+          # latest index — always (build.yml is the sole manager of the latest tag)
+          podman manifest rm "localhost/${APP}:latest" 2>/dev/null || true
+          podman manifest create "localhost/${APP}:latest"
+          podman manifest add \
+            --arch "${OCI_ARCH}" --os linux \
+            "localhost/${APP}:latest" \
+            "docker://ghcr.io/${OWNER}/${APP}@${DIGEST}"
+          # Push index only — per-arch blobs already in registry, --all not needed
+          podman manifest push \
+            --format oci \
+            "localhost/${APP}:latest" \
+            "docker://ghcr.io/${OWNER}/${APP}:latest"
+          echo "==> Pushed image index ghcr.io/${OWNER}/${APP}:latest → ${ARCH} @ ${DIGEST}"
+
+          # version index — bundle-repack apps only (VERSION set in GITHUB_ENV)
+          if [[ -n "${VERSION:-}" ]]; then
+            podman manifest rm "localhost/${APP}:${VERSION}" 2>/dev/null || true
+            podman manifest create "localhost/${APP}:${VERSION}"
+            podman manifest add \
+              --arch "${OCI_ARCH}" --os linux \
+              "localhost/${APP}:${VERSION}" \
+              "docker://ghcr.io/${OWNER}/${APP}@${DIGEST}"
+            # Push index only — per-arch blobs already in registry, --all not needed
+            podman manifest push \
+              --format oci \
+              "localhost/${APP}:${VERSION}" \
+              "docker://ghcr.io/${OWNER}/${APP}:${VERSION}"
+            echo "==> Pushed image index ghcr.io/${OWNER}/${APP}:${VERSION} → ${ARCH} @ ${DIGEST}"
+          fi
+
+      - name: Verify image index shape
+        run: |
+          APP="${{ matrix.app }}"
+          OWNER="${{ github.repository_owner }}"
+          COUNT=$(skopeo inspect --raw \
+            "docker://ghcr.io/${OWNER}/${APP}:latest" \
+            | jq '.manifests | length')
+          [[ "${COUNT}" -ge 1 ]] \
+            && echo "==> latest index has ${COUNT} platform(s)" \
+            || { echo "ERROR: latest is not an image index" >&2; exit 1; }
 
       - name: Login to ghcr.io for skopeo inspect
         run: |
