@@ -157,10 +157,16 @@ jobs:
           echo "CHUNKED=${CHUNKED}" >> "$GITHUB_ENV"
           echo "LAYER_COUNT=${LAYER_COUNT}" >> "$GITHUB_ENV"
 
-      - name: Push version tag to ghcr.io
+      - name: Push staging tag to ghcr.io
         run: |
-          TAG="${{ inputs.version }}-${{ matrix.arch }}"
-          TARGET="ghcr.io/${{ github.repository_owner }}/${{ inputs.app }}:${TAG}"
+          ARCH="${{ matrix.arch }}"
+          case "${ARCH}" in
+            x86_64)  OCI_ARCH="amd64" ;;
+            aarch64) OCI_ARCH="arm64" ;;
+            *)       echo "ERROR: unknown arch ${ARCH}" >&2; exit 1 ;;
+          esac
+          STAGING_TAG="sha-${{ github.run_id }}-${OCI_ARCH}"
+          TARGET="ghcr.io/${{ github.repository_owner }}/${{ inputs.app }}:${STAGING_TAG}"
           echo "${{ secrets.GITHUB_TOKEN }}" | \
             podman login ghcr.io -u "${{ github.repository_owner }}" --password-stdin
           podman push \
@@ -168,7 +174,8 @@ jobs:
             --digestfile /tmp/digest.txt \
             "${CHUNKED}" "docker://${TARGET}"
           DIGEST=$(cat /tmp/digest.txt)
-          echo "==> Pushed ${TARGET} @ ${DIGEST} — layers: ${LAYER_COUNT}"
+          echo "STAGING_TAG=${STAGING_TAG}" >> "$GITHUB_ENV"
+          echo "==> Pushed staging tag ${TARGET} @ ${DIGEST} — layers: ${LAYER_COUNT}"
 
       - name: Create OCI image index
         run: |
@@ -208,9 +215,8 @@ jobs:
 
       - name: Verify labels on ghcr.io
         run: |
-          TAG="${{ inputs.version }}-${{ matrix.arch }}"
           skopeo inspect \
-            "docker://ghcr.io/${{ github.repository_owner }}/${{ inputs.app }}:${TAG}" \
+            "docker://ghcr.io/${{ github.repository_owner }}/${{ inputs.app }}:${STAGING_TAG}" \
             | python3 -c "
           import json, sys
           d = json.load(sys.stdin)
@@ -224,11 +230,30 @@ jobs:
 
       - name: Verify all layers are zstd:chunked
         run: |
-          TAG="${{ inputs.version }}-${{ matrix.arch }}"
           RESULTS=$(skopeo inspect --raw \
-            "docker://ghcr.io/${{ github.repository_owner }}/${{ inputs.app }}:${TAG}" \
+            "docker://ghcr.io/${{ github.repository_owner }}/${{ inputs.app }}:${STAGING_TAG}" \
             | jq -r '.layers[] | "Layer \(.digest[:19]): chunked=\((.annotations // {}) | has("io.github.containers.zstd-chunked.manifest-checksum"))"')
           echo "${RESULTS}"
           echo "${RESULTS}" | grep -q "chunked=false" \
             && { echo "ERROR: one or more layers missing zstd:chunked annotation" >&2; exit 1; } \
             || echo "==> All ${LAYER_COUNT} layers are zstd:chunked"
+
+      - name: Delete staging tag
+        run: |
+          APP="${{ inputs.app }}"
+          VERSION_ID=$(gh api "/user/packages/container/${APP}/versions" \
+            --jq --arg tag "${STAGING_TAG}" \
+            '.[] | select(.metadata.container.tags[] == $tag) | .id' \
+            || true)
+          if [[ $(echo "${VERSION_ID}" | grep -c .) -gt 1 ]]; then
+            echo "ERROR: multiple versions matched staging tag ${STAGING_TAG} — manual cleanup required" >&2
+            exit 1
+          fi
+          if [[ -n "${VERSION_ID}" ]]; then
+            gh api --method DELETE "/user/packages/container/${APP}/versions/${VERSION_ID}"
+            echo "==> Deleted staging tag ${STAGING_TAG} (version ID ${VERSION_ID})"
+          else
+            echo "WARNING: staging tag ${STAGING_TAG} not found — may already be deleted"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
