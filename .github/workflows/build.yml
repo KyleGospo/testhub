@@ -14,7 +14,11 @@ on:
         default: ''
 
 concurrency:
-  group: build-${{ github.ref }}
+  # Scope cancellation to the same package on the same ref.
+  # workflow_dispatch with app=X: cancels a prior in-progress run for the same app.
+  # push: uses github.sha so each commit is independent — no cross-package cancellation
+  # (the triggered app isn't known at workflow level for push events).
+  group: build-${{ github.ref }}-${{ inputs.app || github.sha }}
   cancel-in-progress: true
 
 # Top-level: deny all. Each job declares only what it needs.
