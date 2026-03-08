@@ -107,7 +107,7 @@ jobs:
         id: manifest-meta
         if: steps.detect-path.outputs.mode == 'flatpak-builder'
         run: |
-          BRANCH=$(yq '.default-branch // "stable"' "flatpaks/${{ matrix.app }}/manifest.yaml")
+          BRANCH=$(python3 -c "import yaml,sys; d=yaml.safe_load(open(sys.argv[1])); print(d.get('default-branch','stable'))" "flatpaks/${{ matrix.app }}/manifest.yaml")
           echo "branch=${BRANCH}" >> "$GITHUB_OUTPUT"
 
       - name: Build with flatpak-builder (cached)
