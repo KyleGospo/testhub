@@ -1,4 +1,5 @@
 name: Build Flatpak OCI
+run-name: "Build ${{ inputs.app || 'flatpak(s)' }} OCI (${{ github.ref_name }}) by @${{ github.actor }}"
 
 on:
   push:
