@@ -75,8 +75,10 @@ Rules:
 - `podman image exists` guard skips gnome-49 re-pull when cached — eliminates ~2-3s per loop
 - `just build` uses `podman push --compression-format=zstd:chunked`; skopeo cannot set this
   compression format, which is why the push path uses podman (not skopeo)
-- `just loop` runs entirely on host — it uses podman internally, modifies build dirs and local
-  registry; do NOT wrap in a second devaipod container (podman-in-podman is not configured)
+- All agent tasks and local development run via devaipod (one session per app):
+  `~/.cargo/bin/devaipod run ~/src/jorgehub --host -c 'just loop <app>'`
+  The devcontainer must support privileged containers (`capAdd: SYS_ADMIN`) for nested podman
+  in `just loop` / `just build` to work. Verify `devcontainer.json` before first run.
 - chunkah pin: `quay.io/jlebon/chunkah:v0.2.0` (pre-production — update when stable release ships)
 - chunkah layer count for goose (~200MB): ~30 layers from OSTree object store heuristics alone;
   xattr-based component hints deferred until repo has 3+ packages (see journal 20260306-184501-301)
