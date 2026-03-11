@@ -84,7 +84,7 @@ modules:
         dest-filename: 16.png
       - type: file
         url: https://hg-edge.mozilla.org/comm-central/raw-file/0a9b4084679aa2d291ec4ea69dccac4219acb705/mail/branding/nightly/default32.png
-        sha256: fddf94ccd9cc9e4579b1e494631415981973eae9111e4d1fae20c4b711900d8c
+        sha256: 3eecee68cfa354807919b4b6d98d56209415809630d02076229d1ae622bcf0f9
         dest: icons
         dest-filename: 32.png
       - type: file
@@ -94,7 +94,7 @@ modules:
         dest-filename: 48.png
       - type: file
         url: https://hg-edge.mozilla.org/comm-central/raw-file/0a9b4084679aa2d291ec4ea69dccac4219acb705/mail/branding/nightly/default64.png
-        sha256: 3eecee68cfa354807919b4b6d98d56209415809630d02076229d1ae622bcf0f9
+        sha256: fddf94ccd9cc9e4579b1e494631415981973eae9111e4d1fae20c4b711900d8c
         dest: icons
         dest-filename: 64.png
       - type: file
