@@ -15,8 +15,12 @@ finish-args:
   - --socket=wayland
   # Network access (model downloads, local server API)
   - --share=network
-  # User home for models (~/.lmstudio)
-  - --filesystem=home  # Required: LM Studio stores models and config in ~/.lmstudio
+  # User home for models and config
+  # --filesystem=home is required: LM Studio defaults to ~/.lmstudio (non-XDG; no XDG support as of 0.4.7)
+  # and allows users to configure a custom model directory anywhere under $HOME via the GUI.
+  # Tightening to --filesystem=~/.lmstudio would break custom model paths.
+  # Upstream tracker: https://github.com/lmstudio-ai/lmstudio-bug-tracker/issues/1601
+  - --filesystem=home
   # D-Bus for notifications and system integration
   - --talk-name=org.freedesktop.Notifications
   # D-Bus portal for URL opening and system integration
