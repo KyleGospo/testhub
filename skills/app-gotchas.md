@@ -8,7 +8,7 @@ Per-app known issues and workarounds. Each app has a dedicated `GOTCHAS.md` in i
 | ghostty | `flatpaks/ghostty/GOTCHAS.md` | sandbox escape (`--talk-name=org.freedesktop.Flatpak`), aggressive `*.so`/`*.a` cleanup globs |
 | goose | `flatpaks/goose/GOTCHAS.md` | bundle-repack (no metainfo inject), x86_64 only, missing `<categories>` (Flathub-only violation) |
 | lmstudio | `flatpaks/lmstudio/GOTCHAS.md` | icon omitted (resize unsolved), `--filesystem=home` intentional, x86_64 only, manual Renovate required |
-| firefox-nightly | `flatpaks/firefox-nightly/GOTCHAS.md` | rolling aarch64 sha256, BaseApp required pre-install, `.appdata.xml` skips CI validation |
+| firefox-nightly | `flatpaks/firefox-nightly/GOTCHAS.md` | app-id is `org.mozilla.firefox.nightly` (renamed from `org.mozilla.firefox` to avoid Flathub clash), rolling aarch64 sha256, BaseApp required pre-install, `.appdata.xml` skips CI validation |
 
 ## bundle-repack apps: no metainfo injection
 

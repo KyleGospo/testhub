@@ -6,8 +6,8 @@ Build pipeline for jorgehub. Two paths, one common output.
 
 | File | Path | Example apps |
 |---|---|---|
-| `flatpaks/<app>/manifest.yaml` | flatpak-builder | ghostty |
-| `flatpaks/<app>/release.yaml` | bundle-repack | goose, lmstudio, firefox-nightly |
+| `flatpaks/<app>/manifest.yaml` | flatpak-builder | ghostty, firefox-nightly |
+| `flatpaks/<app>/release.yaml` | bundle-repack | goose, lmstudio |
 
 **flatpak-builder path** — builds from source inside gnome-49 container, requires offline
 dependency manifests (no network during build per Flathub policy). Produces an OSTree repo

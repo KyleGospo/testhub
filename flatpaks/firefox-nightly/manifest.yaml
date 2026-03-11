@@ -1,4 +1,4 @@
-app-id: org.mozilla.firefox
+app-id: org.mozilla.firefox.nightly
 runtime: org.freedesktop.Platform
 runtime-version: "24.08"
 sdk: org.freedesktop.Sdk
@@ -57,15 +57,15 @@ modules:
       - install -d /app/lib/firefox
       - cp -r firefox/. /app/lib/firefox/
       - install -D -m 755 firefox.sh /app/bin/firefox
-      - install -D -m 644 org.mozilla.firefox.desktop /app/share/applications/org.mozilla.firefox.desktop
-      - install -D -m 644 org.mozilla.firefox.appdata.xml /app/share/metainfo/org.mozilla.firefox.appdata.xml
-      - install -D -m 644 icons/16.png /app/share/icons/hicolor/16x16/apps/org.mozilla.firefox.png
-      - install -D -m 644 icons/32.png /app/share/icons/hicolor/32x32/apps/org.mozilla.firefox.png
-      - install -D -m 644 icons/48.png /app/share/icons/hicolor/48x48/apps/org.mozilla.firefox.png
-      - install -D -m 644 icons/64.png /app/share/icons/hicolor/64x64/apps/org.mozilla.firefox.png
-      - install -D -m 644 icons/128.png /app/share/icons/hicolor/128x128/apps/org.mozilla.firefox.png
-      - install -D -m 644 icons/256.png /app/share/icons/hicolor/256x256/apps/org.mozilla.firefox.png
-      - install -D -m 644 icons/symbolic.svg /app/share/icons/hicolor/symbolic/apps/org.mozilla.firefox-symbolic.svg
+      - install -D -m 644 org.mozilla.firefox.nightly.desktop /app/share/applications/org.mozilla.firefox.nightly.desktop
+      - install -D -m 644 org.mozilla.firefox.nightly.appdata.xml /app/share/metainfo/org.mozilla.firefox.nightly.appdata.xml
+      - install -D -m 644 icons/16.png /app/share/icons/hicolor/16x16/apps/org.mozilla.firefox.nightly.png
+      - install -D -m 644 icons/32.png /app/share/icons/hicolor/32x32/apps/org.mozilla.firefox.nightly.png
+      - install -D -m 644 icons/48.png /app/share/icons/hicolor/48x48/apps/org.mozilla.firefox.nightly.png
+      - install -D -m 644 icons/64.png /app/share/icons/hicolor/64x64/apps/org.mozilla.firefox.nightly.png
+      - install -D -m 644 icons/128.png /app/share/icons/hicolor/128x128/apps/org.mozilla.firefox.nightly.png
+      - install -D -m 644 icons/256.png /app/share/icons/hicolor/256x256/apps/org.mozilla.firefox.nightly.png
+      - install -D -m 644 icons/symbolic.svg /app/share/icons/hicolor/symbolic/apps/org.mozilla.firefox.nightly-symbolic.svg
     cleanup-commands:
       - mkdir -p ${FLATPAK_DEST}/lib/ffmpeg
       - mkdir -p ${FLATPAK_DEST}/etc/firefox
@@ -87,11 +87,11 @@ modules:
         dest-filename: firefox.sh
         commands:
           - export TMPDIR=$XDG_CACHE_HOME/tmp
-          - exec /app/lib/firefox/firefox --name org.mozilla.firefox "$@"
+          - exec /app/lib/firefox/firefox --name org.mozilla.firefox.nightly "$@"
       - type: file
-        path: org.mozilla.firefox.desktop
+        path: org.mozilla.firefox.nightly.desktop
       - type: file
-        path: org.mozilla.firefox.appdata.xml
+        path: org.mozilla.firefox.nightly.appdata.xml
       # Icons pinned to revision b665f8e02b0c8c7189635bd4b2ca356b79b5a5c3 (2026-03-11).
       # Update the revision hash and sha256 values when bumping x-version.
       - type: file

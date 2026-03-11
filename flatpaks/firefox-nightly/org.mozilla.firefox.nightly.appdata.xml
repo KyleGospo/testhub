@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>org.mozilla.firefox</id>
+  <id>org.mozilla.firefox.nightly</id>
   <name>Firefox Nightly</name>
   <summary>The next generation of Mozilla Firefox</summary>
   <metadata_license>CC0-1.0</metadata_license>
@@ -14,7 +14,7 @@
   </description>
   <url type="homepage">https://www.mozilla.org/firefox/nightly/</url>
   <url type="bugtracker">https://bugzilla.mozilla.org/</url>
-  <launchable type="desktop-id">org.mozilla.firefox.desktop</launchable>
+  <launchable type="desktop-id">org.mozilla.firefox.nightly.desktop</launchable>
   <releases>
     <release version="150.0a1" date="2026-03-07"/>
   </releases>

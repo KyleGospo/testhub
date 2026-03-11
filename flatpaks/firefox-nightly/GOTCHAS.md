@@ -24,7 +24,7 @@ environments.
 
 ## `.appdata.xml` extension skips validation
 
-The metainfo file is named `org.mozilla.firefox.appdata.xml` (legacy extension). The
+The metainfo file is named `org.mozilla.firefox.nightly.appdata.xml` (legacy extension). The
 `appstreamcli validate` step in `build.yml` globs for `*.metainfo.xml` — this file is
 **silently skipped** by that validation step. Not a build error, but means metainfo
 correctness is unverified by CI.
