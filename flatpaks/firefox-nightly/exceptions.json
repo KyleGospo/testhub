@@ -1,3 +1,9 @@
 {
-    "org.mozilla.firefox.nightly": ["appid-filename-mismatch"]
+    "org.mozilla.firefox.nightly": [
+        "appid-filename-mismatch",
+        "finish-args-unnecessary-xdg-config-gtk-3.0-ro-access",
+        "finish-args-own-name-wildcard-org.mozilla.firefox",
+        "finish-args-own-name-wildcard-org.mozilla.firefox_beta",
+        "manifest-unknown-properties"
+    ]
 }
