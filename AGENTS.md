@@ -18,16 +18,16 @@ Ghostty is the first app and the proof-of-concept for the full pipeline.
 
 ## Development Policy
 
-**All development and testing MUST be verified locally via devaipod before CI.**
+**All development and testing MUST be verified locally before CI.**
 
 ```bash
-~/.cargo/bin/devaipod run ~/src/jorgehub --host -c 'just loop <app>'
+just loop <app>
 ```
 
 - `just loop <app>` is the mandatory first test for any change — builds, chunkah split, push to local registry (:5000), label verification
 - CI (`just build` / GitHub Actions) runs ONLY after `just loop` passes locally
 - Never trigger CI as a substitute for local testing
-- devaipod uses the gnome-49 container with --privileged, matching the CI environment exactly
+- **Do NOT wrap `just loop`/`just build` in devaipod.** jorgehub runs nested podman directly on the host; podman-in-podman (devaipod wrapping) causes failures. Run `just loop` directly.
 
 ## Build Commands
 
@@ -88,10 +88,8 @@ Rules:
 - `podman image exists` guard skips gnome-49 re-pull when cached — eliminates ~2-3s per loop
 - `just build` uses `podman push --compression-format=zstd:chunked`; skopeo cannot set this
   compression format, which is why the push path uses podman (not skopeo)
-- All agent tasks and local development run via devaipod (one session per app):
-  `~/.cargo/bin/devaipod run ~/src/jorgehub --host -c 'just loop <app>'`
-  The devcontainer must support privileged containers (`capAdd: SYS_ADMIN`) for nested podman
-  in `just loop` / `just build` to work. Verify `devcontainer.json` before first run.
+- jorgehub builds run nested podman directly on the host — never wrap `just loop`/`just build`
+  in devaipod; podman-in-podman causes failures.
 - chunkah pin: `coreos/chunkah` v0.2.0 — fetched as `Containerfile.splitter` from GitHub releases (not a container image); see `CHUNKAH_SPLITTER` env var in build.yml/backfill.yml; pin is managed by Renovate
 - chunkah layer count for goose (~200MB): ~30 layers from OSTree object store heuristics alone;
   xattr-based component hints deferred until repo has 3+ packages (see journal 20260306-184501-301)
