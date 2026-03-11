@@ -72,13 +72,13 @@ modules:
       - mkdir -p ${FLATPAK_DEST}/share/runtime/langpack
     sources:
       - type: archive
-        url: https://download-installer.cdn.mozilla.net/pub/firefox/nightly/latest-mozilla-central/firefox-150.0a1.en-US.linux-x86_64.tar.xz
+        url: https://ftp.mozilla.org/pub/firefox/nightly/latest-mozilla-central/firefox-150.0a1.en-US.linux-x86_64.tar.xz
         sha256: 20a8807687d6e184b5cb06b08223d7200ecd208a91c1a23a66c6af41d13d7fb6
         strip-components: 0
         only-arches:
           - x86_64
       - type: archive
-        url: https://download-installer.cdn.mozilla.net/pub/firefox/nightly/latest-mozilla-central/firefox-150.0a1.en-US.linux-aarch64.tar.xz
+        url: https://ftp.mozilla.org/pub/firefox/nightly/latest-mozilla-central/firefox-150.0a1.en-US.linux-aarch64.tar.xz
         sha256: d7616ec4f0c2e3a8bc6128573ccf7994a4d7c8988bb3b92d009068ee7ad3a20b
         strip-components: 0
         only-arches:
