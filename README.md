@@ -1,4 +1,4 @@
-# OCI Flatpak Remote
+# Bluefin's OCI Flatpak Remote
 
 An experimental Flatpak remote designed to prototype Flathub's transition to OCI. Someone promised me a magical land of shared storage and composefs, I guess we'll find out. 😄
 
@@ -41,3 +41,11 @@ Replace `<org>` with the GitHub organization or user and `<repo-name>` with this
 ### Update all
 
     flatpak update
+
+### Checking the Signature
+
+< add instructions here >
+
+### Checking the SBOMs
+
+< add instructions here > 
