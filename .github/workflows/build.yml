@@ -245,7 +245,7 @@ jobs:
       - name: Split layers with chunkah
         env:
           APP: ${{ matrix.app }}
-          CHUNKAH_SPLITTER: https://github.com/coreos/chunkah/releases/download/v0.2.0/Containerfile.splitter
+          CHUNKAH_SPLITTER: https://github.com/coreos/chunkah/releases/download/v0.3.0/Containerfile.splitter
         run: |
           INPUT="localhost/${APP}:input"
           LABELED="localhost/${APP}:labeled"

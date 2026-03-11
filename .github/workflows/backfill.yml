@@ -96,7 +96,7 @@ jobs:
 
       - name: Split layers with chunkah and apply OCI labels
         env:
-          CHUNKAH_SPLITTER: https://github.com/coreos/chunkah/releases/download/v0.2.0/Containerfile.splitter
+          CHUNKAH_SPLITTER: https://github.com/coreos/chunkah/releases/download/v0.3.0/Containerfile.splitter
         run: |
           APP="${{ inputs.app }}"
           INPUT="localhost/${APP}:input"
