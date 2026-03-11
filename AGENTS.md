@@ -27,7 +27,29 @@ just loop <app>
 - `just loop <app>` is the mandatory first test for any change — builds, chunkah split, push to local registry (:5000), label verification
 - CI (`just build` / GitHub Actions) runs ONLY after `just loop` passes locally
 - Never trigger CI as a substitute for local testing
-- **Do NOT wrap `just loop`/`just build` in devaipod.** jorgehub runs nested podman directly on the host; podman-in-podman (devaipod wrapping) causes failures. Run `just loop` directly.
+
+### Running via devaipod (preferred for agent sessions)
+
+jorgehub has `.devcontainer/devcontainer.json` with `nestedContainers: true` and `--privileged`.
+The workspace image (`gnome-49`) includes podman, buildah, flatpak, just, skopeo, yq, jq, curl.
+Inner `podman run` calls inside `just loop` route via the host podman socket as sibling containers.
+
+```bash
+# Launch task via devaipod (GitHub URL required — not local dir):
+~/.cargo/bin/devaipod run https://github.com/castrojo/jorgehub --host \
+  -c 'LOCAL_REGISTRY=host.containers.internal:5000 just loop <app>'
+```
+
+- `LOCAL_REGISTRY=host.containers.internal:5000` is required — `localhost:5000` resolves to the
+  workspace container, not the host. The Justfile uses `LOCAL_REGISTRY` env var with fallback to
+  `localhost:5000` for direct host runs.
+- Ensure the local registry is running on the host before launching devaipod.
+
+### Running directly on host (also valid)
+
+```bash
+just loop <app>   # local_registry defaults to localhost:5000
+```
 
 ## Build Commands
 
@@ -88,8 +110,8 @@ Rules:
 - `podman image exists` guard skips gnome-49 re-pull when cached — eliminates ~2-3s per loop
 - `just build` uses `podman push --compression-format=zstd:chunked`; skopeo cannot set this
   compression format, which is why the push path uses podman (not skopeo)
-- jorgehub builds run nested podman directly on the host — never wrap `just loop`/`just build`
-  in devaipod; podman-in-podman causes failures.
+- jorgehub builds run nested podman directly on the host — use the devaipod workflow
+  (GitHub URL + `LOCAL_REGISTRY=host.containers.internal:5000`) or run `just loop` directly on host.
 - chunkah pin: `coreos/chunkah` v0.2.0 — fetched as `Containerfile.splitter` from GitHub releases (not a container image); see `CHUNKAH_SPLITTER` env var in build.yml/backfill.yml; pin is managed by Renovate
 - chunkah layer count for goose (~200MB): ~30 layers from OSTree object store heuristics alone;
   xattr-based component hints deferred until repo has 3+ packages (see journal 20260306-184501-301)
