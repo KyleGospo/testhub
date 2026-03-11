@@ -340,9 +340,16 @@ jobs:
       - name: Install cosign
         uses: sigstore/cosign-installer@ba7bc0a3fef59531c69a25acd34668d6d3fe6f22 # v4.1.0
 
+      - name: Log in to ghcr.io for cosign
+        run: |
+          # go-containerregistry (used by cosign) reads $HOME/.docker/config.json first.
+          # docker login writes to that path; podman login writes to containers/auth.json
+          # which cosign never sees because the docker config takes precedence.
+          echo "${{ secrets.GITHUB_TOKEN }}" | \
+            docker login ghcr.io -u "${{ github.repository_owner }}" --password-stdin
+
       - name: Sign image with cosign
         run: |
-          export REGISTRY_AUTH_FILE="${HOME}/.config/containers/auth.json"
           cosign sign --yes \
             ghcr.io/${{ github.repository_owner }}/${{ matrix.app }}@${{ env.DIGEST }}
 
@@ -356,7 +363,6 @@ jobs:
 
       - name: Attest SBOM to registry
         run: |
-          export REGISTRY_AUTH_FILE="${HOME}/.config/containers/auth.json"
           cosign attest --yes \
             --predicate sbom-${{ matrix.app }}.spdx.json \
             --type spdxjson \
