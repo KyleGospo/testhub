@@ -1,9 +1,9 @@
-# jorgehub
+# OCI Flatpak Remote
 
-An experimental flatpack remoted designed to prototype Flathub's transition to OCI. Someone promised me a magical land of shared storage and composefs, I guess we'll find out. 😄
+An experimental Flatpak remote designed to prototype Flathub's transition to OCI. Someone promised me a magical land of shared storage and composefs, I guess we'll find out. 😄
 
-- Flatpak packing skills for automation
-- Serves the remote from github pages to clients, pushes the flatpak to [the registry](https://github.com/users/castrojo/packages/container/package/jorgehub%2Fghostty)
+- Flatpak packaging pipeline with full automation
+- Serves the remote from GitHub Pages; pushes images to `ghcr.io/<org>/<repo-name>`
 - [Chunkah](https://github.com/coreos/chunkah) and [zstd:chunked](https://github.com/containers/storage/blob/main/docs/containers-storage-zstd-chunked.md) enabled for partial pulls
 - We need data when this lands in OS bootc images so we might as well get going.
 
@@ -22,7 +22,9 @@ This potentially unlocks all container registries and git forges as Flatpak host
 
 ### Add this remote
 
-    flatpak remote-add --if-not-exists jorgehub oci+https://castrojo.github.io/jorgehub
+Replace `<org>` with the GitHub organization or user and `<repo-name>` with this repository's name:
+
+    flatpak remote-add --if-not-exists <repo-name> oci+https://<org>.github.io/<repo-name>
 
 ### Install packages
 
@@ -32,9 +34,9 @@ This potentially unlocks all container registries and git forges as Flatpak host
 | Goose | `io.github.block.Goose` | Goose AI agent |
 | Firefox Nightly | `org.mozilla.firefox//nightly` | Firefox Nightly browser |
 
-    flatpak install jorgehub com.mitchellh.ghostty
-    flatpak install jorgehub io.github.block.Goose
-    flatpak install jorgehub org.mozilla.firefox//nightly
+    flatpak install <repo-name> com.mitchellh.ghostty
+    flatpak install <repo-name> io.github.block.Goose
+    flatpak install <repo-name> org.mozilla.firefox//nightly
 
 ### Update all
 

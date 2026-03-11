@@ -2,7 +2,7 @@
 
 ## Worktree hygiene
 
-The index lives on the `gh-pages` branch, managed via a git worktree at `/tmp/jorgehub-pages`.
+The index lives on the `gh-pages` branch, managed via a git worktree at `/tmp/<repo-name>-pages`.
 
 **Always fetch before committing.** Before any `git add` in the worktree:
 

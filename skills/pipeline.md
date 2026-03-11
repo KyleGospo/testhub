@@ -1,6 +1,6 @@
 # Pipeline
 
-Build pipeline for jorgehub. Two paths, one common output.
+Build pipeline. Two paths, one common output.
 
 ## Two build paths
 
@@ -100,11 +100,11 @@ even when CI passed. After any push, validate inside a throwaway container:
 
 ```bash
 podman run --rm -it --privileged \
-  -v ~/src/jorgehub:/workspace:z -w /workspace \
+  -v ~/src/<repo>:/workspace:z -w /workspace \
   ghcr.io/flathub-infra/flatpak-github-actions:gnome-49 bash
 # inside:
-flatpak remote-add --user --if-not-exists jorgehub /workspace/jorgehub.flatpakrepo
-flatpak install --user --noninteractive jorgehub <app-id>
+flatpak remote-add --user --if-not-exists <repo> /workspace/<repo>.flatpakrepo
+flatpak install --user --noninteractive <repo> <app-id>
 flatpak info --user <app-id>   # confirm Alt-id: sha256:... matches pushed digest
 ```
 
@@ -130,12 +130,12 @@ must be buildable and installable before the issue is closed.
 ## flatpak-builder-lint known errors
 
 `build.yml` runs `flatpak-builder-lint manifest "flatpaks/$app/manifest.yaml"` during CI.
-The linter has several known behaviors that affect jorgehub:
+The linter has several known behaviors that affect this repo:
 
 ### appid-filename-mismatch (hard blocker)
 
 The linter expects the manifest filename to match the app-id, e.g. `org.example.App.yaml`.
-Every jorgehub app uses `manifest.yaml` — this triggers `appid-filename-mismatch` on every
+Every app in this repo uses `manifest.yaml` — this triggers `appid-filename-mismatch` on every
 manifest.yaml-based app.
 
 **Fix applied:** Each manifest.yaml-based app has a `flatpaks/<app>/exceptions.json`:

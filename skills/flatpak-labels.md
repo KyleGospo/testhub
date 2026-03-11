@@ -8,7 +8,7 @@ The Flatpak client reads **Labels** only — not OCI annotations. `org.flatpak.r
 Verify after every push:
 
 ```bash
-skopeo inspect --tls-verify=false "docker://localhost:5000/castrojo/jorgehub/<app>@<digest>" \
+skopeo inspect --tls-verify=false "docker://localhost:5000/<org>/<repo>/<app>@<digest>" \
   | jq '.Labels["org.flatpak.ref"], .Labels["org.flatpak.metadata"]'
 ```
 
@@ -45,7 +45,7 @@ labels will not be in the config string and will be lost.
 
 ```bash
 # 1. Check labels in local registry
-skopeo inspect --tls-verify=false "docker://localhost:5000/castrojo/jorgehub/<app>@<digest>" \
+skopeo inspect --tls-verify=false "docker://localhost:5000/<org>/<repo>/<app>@<digest>" \
   | jq -e '
     .Labels["org.flatpak.ref"] // error("MISSING: org.flatpak.ref"),
     .Labels["org.flatpak.metadata"] // error("MISSING: org.flatpak.metadata"),
@@ -54,6 +54,6 @@ skopeo inspect --tls-verify=false "docker://localhost:5000/castrojo/jorgehub/<ap
   '
 
 # 2. Check layers are zstd:chunked (build path only)
-skopeo inspect --raw "docker://ghcr.io/castrojo/<app>:latest-<arch>" \
+skopeo inspect --raw "docker://ghcr.io/<org>/<repo>/<app>:latest-<arch>" \
   | jq -r '.layers[] | "Layer \(.digest[:19]): chunked=\((.annotations // {}) | has("io.github.containers.zstd-chunked.manifest-checksum"))"'
 ```

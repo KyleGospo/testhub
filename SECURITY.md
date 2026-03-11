@@ -10,13 +10,15 @@ brew install cosign
 
 ## Verify image signature
 
-Replace `<app>` with the app name (e.g. `ghostty`, `goose`) and `<tag>` with the version tag or `latest`.
+Replace `<org>`, `<repo>`, `<app>`, and `<tag>` with the actual values for this repository.
+
+The `--certificate-identity` must exactly match the GitHub Actions workflow URL for the signing repository.
 
 ```bash
 cosign verify \
-  --certificate-identity=https://github.com/castrojo/jorgehub/.github/workflows/build.yml@refs/heads/main \
+  --certificate-identity=https://github.com/<org>/<repo>/.github/workflows/build.yml@refs/heads/main \
   --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
-  ghcr.io/castrojo/<app>:<tag>
+  ghcr.io/<org>/<repo>/<app>:<tag>
 ```
 
 Exit 0 means the signature is valid. Output is JSON containing the certificate details (workflow ref, commit SHA, build timestamp).
@@ -26,9 +28,9 @@ Exit 0 means the signature is valid. Output is JSON containing the certificate d
 ```bash
 cosign verify-attestation \
   --type spdxjson \
-  --certificate-identity=https://github.com/castrojo/jorgehub/.github/workflows/build.yml@refs/heads/main \
+  --certificate-identity=https://github.com/<org>/<repo>/.github/workflows/build.yml@refs/heads/main \
   --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
-  ghcr.io/castrojo/<app>:<tag> \
+  ghcr.io/<org>/<repo>/<app>:<tag> \
   | jq '.payload | @base64d | fromjson'
 ```
 

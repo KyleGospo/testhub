@@ -1,5 +1,5 @@
 {
-  "name": "jorgehub",
+  "name": "flatpak-oci-remote",
   "image": "ghcr.io/flathub-infra/flatpak-github-actions:gnome-49",
   "runArgs": [
     "--security-opt", "label=disable",

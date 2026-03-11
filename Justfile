@@ -313,11 +313,12 @@ loop app="ghostty":
         echo "==> sha256 OK: ${ACTUAL_SHA}"
         echo "==> Importing bundle into OSTree repo"
         podman image exists "${CONTAINER_IMAGE}" || podman pull "${CONTAINER_IMAGE}"
-        [[ -d "${OSTREE_REPO}" ]] || podman run --rm --privileged --name "jorgehub-${APP}-ostree-init" \
+        REPO_NAME=$(basename "$(git rev-parse --show-toplevel)")
+        [[ -d "${OSTREE_REPO}" ]] || podman run --rm --privileged --name "${REPO_NAME}-${APP}-ostree-init" \
           -v "$(pwd):/workspace:z" -w /workspace \
           "${CONTAINER_IMAGE}" \
           ostree init --mode=archive-z2 --repo="${OSTREE_REPO}"
-        podman run --rm --privileged --name "jorgehub-${APP}-import" \
+        podman run --rm --privileged --name "${REPO_NAME}-${APP}-import" \
           -v "$(pwd):/workspace:z" \
           -v "${BUNDLE_FILE}:${BUNDLE_FILE}:z" \
           -w /workspace \
@@ -326,7 +327,7 @@ loop app="ghostty":
           flatpak build-import-bundle --ref="${REF}" "${OSTREE_REPO}" "${BUNDLE_FILE}"
         echo "==> Exporting OCI bundle"
         rm -rf "${OCI_DIR}"
-        podman run --rm --privileged --name "jorgehub-${APP}-bundle" \
+        podman run --rm --privileged --name "${REPO_NAME}-${APP}-bundle" \
           -v "$(pwd):/workspace:z" -w /workspace \
           -e SOURCE_DATE_EPOCH=0 \
           "${CONTAINER_IMAGE}" \
@@ -343,8 +344,9 @@ loop app="ghostty":
           && echo "==> Flatpak-builder: VERSION=${VERSION}" \
           || { echo "==> Flatpak-builder: no x-version in manifest.yaml — :latest only"; VERSION=""; }
         echo "==> Building ${REF}"
+        REPO_NAME=$(basename "$(git rev-parse --show-toplevel)")
         podman image exists "${CONTAINER_IMAGE}" || podman pull "${CONTAINER_IMAGE}"
-        podman run --rm --privileged --name "jorgehub-${APP}-build" \
+        podman run --rm --privileged --name "${REPO_NAME}-${APP}-build" \
           -v "$(pwd):/workspace:z" -w /workspace \
           -e SOURCE_DATE_EPOCH=0 \
           "${CONTAINER_IMAGE}" \
@@ -354,7 +356,7 @@ loop app="ghostty":
             --repo="${OSTREE_REPO}" \
             ".${APP}-build-dir" "${MANIFEST}"
         rm -rf "${OCI_DIR}"
-        podman run --rm --privileged --name "jorgehub-${APP}-bundle" \
+        podman run --rm --privileged --name "${REPO_NAME}-${APP}-bundle" \
           -v "$(pwd):/workspace:z" -w /workspace \
           -e SOURCE_DATE_EPOCH=0 \
           "${CONTAINER_IMAGE}" \
@@ -389,7 +391,8 @@ loop app="ghostty":
     echo "==> chunkah --max-layers ${MAX_LAYERS}"
 
     # 4. Run chunkah via image-mount — outputs uncompressed OCI archive to stdout
-    podman run --rm --name "jorgehub-${APP}-chunkah" \
+    REPO_NAME=$(basename "$(git rev-parse --show-toplevel)")
+    podman run --rm --name "${REPO_NAME}-${APP}-chunkah" \
       --mount=type=image,src="${IMAGE_ID}",dest=/chunkah \
       -e CHUNKAH_CONFIG_STR \
       "{{chunkah_image}}" build \
