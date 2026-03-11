@@ -73,7 +73,7 @@ jobs:
               --app "${APP}" \
               --digest "${DIGEST}" \
               --registry ghcr.io \
-              --repo "${{ github.repository_owner }}/${APP}" \
+              --repo "${{ github.repository }}/${APP}" \
               --tags "latest"
           done
 

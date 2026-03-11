@@ -59,6 +59,20 @@ without requiring glycin loaders (e.g. `python3 PIL/Pillow`, `gdk-pixbuf-thumbna
 release date (`2025-03-01` for v0.4.7) because upstream changelog only listed entries up to
 v0.4.6 as of 2026-03-11. Update when the upstream changelog is updated.
 
+## ghostty
+
+**`--talk-name=org.freedesktop.Flatpak` is a full sandbox escape.**
+The manifest grants `--talk-name=org.freedesktop.Flatpak` to allow the terminal emulator to
+launch host processes (e.g. shell, editors, arbitrary commands). This is intentional for a
+terminal emulator — without it Ghostty cannot function usefully.
+
+**Flathub would reject this outright.** This is an explicit exception from Flathub's sandbox
+policy. This repo is a personal OCI remote, not a Flathub submission. The exception is
+acceptable here but must never be proposed to Flathub.
+
+If Ghostty is ever submitted to Flathub, the sandbox escape must be removed or replaced with
+a portal-based mechanism. Track the upstream issue tracker for any portal support.
+
 ## goose
 
 **chunkah layer count (~200MB): ~30 layers** from OSTree object store heuristics alone.
