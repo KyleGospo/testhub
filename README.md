@@ -4,10 +4,12 @@ An experimental Flatpak remote designed to prototype Flathub's transition to OCI
 
 - Flatpak packaging pipeline with full automation
 - Serves the remote from GitHub Pages; pushes images to `ghcr.io/<org>/<repo-name>`
-- [Chunkah](https://github.com/coreos/chunkah) and [zstd:chunked](https://github.com/containers/storage/blob/main/docs/containers-storage-zstd-chunked.md) enabled for partial pulls
-- We need data when this lands in OS bootc images so we might as well get going.
+- [Chunkah](https://github.com/coreos/chunkah) and [zstd:chunked](https://github.com/containers/storage/blob/main/docs/containers-storage-zstd-chunked.md) enabled for partial pulls on the client
+- Under no circumstance will this remote ever go to production
+  - Things the core team wants to test (Ghostty, Goose) to hopefully aid in getting their flatpaks getting submitted to flathub.
+  - Purpose is to gather data for using OCI for Flathub distribution.
 
-This potentially unlocks all container registries and git forges as Flatpak hosts in a format supported by flatpak. This is a prototype and not a replacement or substitute for Flathub's official process, this is designed to test the package format changes.
+This potentially unlocks all container registries and git forges as Flatpak hosts in a format supported by flatpak. This is a prototype and not a replacement or substitute for Flathub's official process.
 
 ## Key Dependencies
 
@@ -24,7 +26,7 @@ This potentially unlocks all container registries and git forges as Flatpak host
 
 Replace `<org>` with the GitHub organization or user and `<repo-name>` with this repository's name:
 
-    flatpak remote-add --if-not-exists <repo-name> oci+https://<org>.github.io/<repo-name>
+    flatpak remote-add --if-not-exists testhub oci+https://projectbluefin.github.io/testhub
 
 ### Install packages
 
