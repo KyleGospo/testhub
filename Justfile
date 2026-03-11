@@ -380,9 +380,14 @@ update-index app="ghostty":
     git -C /tmp/jorgehub-pages push origin gh-pages
     git worktree remove /tmp/jorgehub-pages --force
 
-# Validate index/static JSON is well-formed
+# Validate index/static JSON is well-formed (must run from gh-pages checkout)
 check-index:
-    python3 scripts/update-index.py --validate
+    #!/usr/bin/env bash
+    set -euo pipefail
+    REPO_ROOT="$(git rev-parse --show-toplevel)"
+    git worktree add /tmp/jorgehub-pages gh-pages 2>/dev/null || true
+    cd /tmp/jorgehub-pages && python3 "${REPO_ROOT}/scripts/update-index.py" --validate
+    git worktree remove /tmp/jorgehub-pages --force
 
 # E2E: add remote, list apps, confirm app is visible
 verify app="ghostty":
