@@ -93,7 +93,7 @@ Rules:
   compression format, which is why the push path uses podman (not skopeo)
 - jorgehub builds run nested podman directly on the host — run `just loop` directly on the host,
   never inside a container wrapper.
-- chunkah pin: `coreos/chunkah` v0.2.0 — fetched as `Containerfile.splitter` from GitHub releases (not a container image); see `CHUNKAH_SPLITTER` env var in build.yml/backfill.yml; pin is managed by Renovate
+- chunkah pin: `coreos/chunkah` v0.3.0 — fetched as `Containerfile.splitter` from GitHub releases (not a container image); see `CHUNKAH_SPLITTER` env var in build.yml/backfill.yml; pin is managed by Renovate. v0.3.0 brings 75% memory reduction (streaming), 40% speed improvement (multi-threading), and reproducibility fixes; Containerfile.splitter and invocation are unchanged from v0.2.0 — upgrading is a straight pin bump in CHUNKAH_SPLITTER
 - chunkah layer count for goose (~200MB): ~30 layers from OSTree object store heuristics alone;
   xattr-based component hints deferred until repo has 3+ packages (see journal 20260306-184501-301)
 - **Flatpak install validation is mandatory after any OCI push (loop or build).** CI green is not
