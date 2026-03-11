@@ -34,14 +34,14 @@ This potentially unlocks all container registries and git forges as Flatpak host
 | Goose | `io.github.block.Goose` | Goose AI agent |
 | LM Studio | `ai.lmstudio.LMStudio` | Local LLM inference |
 | Firefox Nightly | `org.mozilla.firefox.nightly` | Firefox Nightly browser |
-| Thunderbird Nightly | `org.mozilla.Thunderbird` | Thunderbird Nightly email client |
+| Thunderbird Nightly | `org.mozilla.thunderbird.nightly` | Thunderbird Nightly email client |
 | VirtualBox | `org.virtualbox.VirtualBox` | Oracle VirtualBox |
 
     flatpak install testhub com.mitchellh.ghostty
     flatpak install testhub io.github.block.Goose
     flatpak install testhub ai.lmstudio.LMStudio
     flatpak install testhub org.mozilla.firefox.nightly
-    flatpak install testhub org.mozilla.Thunderbird
+    flatpak install testhub org.mozilla.thunderbird.nightly
     flatpak install testhub org.virtualbox.VirtualBox
 
 ### Update all
