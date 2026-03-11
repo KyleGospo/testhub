@@ -8,5 +8,8 @@
     "--device", "/dev/kvm",
     "--privileged"
   ],
-  "capAdd": ["SYS_ADMIN"]
+  "capAdd": ["SYS_ADMIN"],
+  "customizations": {
+    "devaipod": { "nestedContainers": true }
+  }
 }
