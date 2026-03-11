@@ -157,6 +157,12 @@ Rules:
   `latest-mozilla-central` rolling URLs — the sha256 for aarch64 becomes stale daily by design.
   This is acceptable for a nightly-tracking app. Do not attempt to pin sha256 for nightly builds;
   document in the manifest comment that the aarch64 sha256 must be refreshed on each build loop.
+- **firefox-nightly requires `org.mozilla.firefox.BaseApp//24.08` pre-installed in the build container.**
+  The `freedesktop-24.08` runtime (used by gnome-49) does not include `org.mozilla.firefox.BaseApp`
+  by default. In a clean local environment, `just loop firefox-nightly` fails with "BaseApp not installed".
+  Fix: run `flatpak install --user flathub org.mozilla.firefox.BaseApp//24.08` inside the gnome-49
+  build container before invoking flatpak-builder, or add a pre-install step to the loop recipe. This
+  also means `just loop-all` will fail for firefox-nightly on first run in clean environments.
 
 ## Simplicity Rule
 
