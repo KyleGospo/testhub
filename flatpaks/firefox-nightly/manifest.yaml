@@ -6,6 +6,7 @@ base: org.mozilla.firefox.BaseApp
 base-version: "24.08"
 default-branch: nightly
 x-version: "150.0a1"
+x-chunkah-max-layers: "16"
 command: firefox
 
 finish-args:
