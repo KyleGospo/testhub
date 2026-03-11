@@ -1,10 +1,65 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
-  "enabledManagers": ["github-actions"],
+  "enabledManagers": ["github-actions", "custom.regex"],
   "schedule": ["after 6am and before 8am on Monday"],
   "automerge": true,
   "automergeType": "pr",
   "platformAutomerge": true,
-  "labels": ["dependencies", "automated"]
+  "labels": ["dependencies", "automated"],
+  "packageRules": [
+    {
+      "matchManagers": ["custom.regex"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "matchFileNames": ["flatpaks/**/release.yaml", "flatpaks/**/manifest.yaml"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchUpdateTypes": ["major"],
+      "automerge": false
+    },
+    {
+      "matchPackageNames": ["coreos/chunkah"],
+      "automerge": false
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update release.yaml bundle-repack packages: version, url, and sha256 fields",
+      "fileMatch": ["^flatpaks/[^/]+/release\\.yaml$"],
+      "matchStrings": [
+        "version:\\s*(?<currentValue>v?[0-9]+\\.[0-9.]+[^\\n]*)\\nurl:\\s*(?<urlPrefix>https://github\\.com/(?<depName>[^/]+/[^/]+)/releases/download/)v?[0-9]+\\.[0-9.]+[^/]*/(?<urlSuffix>[^\\n]+)\\nsha256:\\s*(?<currentDigest>[0-9a-f]{64})"
+      ],
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver-coerced",
+      "autoReplaceStringTemplate": "version: {{{newValue}}}\nurl: {{{urlPrefix}}}{{{newValue}}}/{{{urlSuffix}}}\nsha256: {{{newDigest}}}"
+    },
+    {
+      "customType": "regex",
+      "description": "Update manifest.yaml flatpak-builder packages: x-version, GitHub archive url, and sha256 fields",
+      "fileMatch": ["^flatpaks/[^/]+/manifest\\.yaml$"],
+      "matchStrings": [
+        "x-version:\\s*\"(?<currentValue>[^\"]+)\"[\\s\\S]*?url:\\s*https://github\\.com/(?<depName>[^/]+/[^/]+)/archive/refs/tags/v[^\\s/]+\\.tar\\.gz[\\s\\S]*?sha256:\\s*(?<currentDigest>[0-9a-f]{64})"
+      ],
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver-coerced",
+      "extractVersion": "^v?(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Update chunkah Containerfile.splitter URL in GitHub Actions workflows",
+      "fileMatch": ["^\\.github/workflows/build\\.yml$", "^\\.github/workflows/backfill\\.yml$"],
+      "matchStrings": [
+        "CHUNKAH_SPLITTER:\\s*https://github\\.com/coreos/chunkah/releases/download/(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)/Containerfile\\.splitter"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "coreos/chunkah",
+      "versioningTemplate": "semver-coerced",
+      "autoReplaceStringTemplate": "CHUNKAH_SPLITTER: https://github.com/coreos/chunkah/releases/download/{{{newValue}}}/Containerfile.splitter"
+    }
+  ]
 }

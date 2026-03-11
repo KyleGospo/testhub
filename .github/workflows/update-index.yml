@@ -1,0 +1,87 @@
+name: Update Flatpak Index
+
+# Triggered after each "Build Flatpak OCI" run completes successfully.
+# Running as a separate workflow serialises all gh-pages pushes — no race
+# between concurrent app builds writing to the same branch.
+
+on:
+  workflow_run:
+    workflows: ["Build Flatpak OCI"]
+    types: [completed]
+
+# Top-level: deny all. This job only needs to write gh-pages and read packages.
+permissions: {}
+
+jobs:
+  update-index:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      packages: read
+      actions: read
+    # Serialise gh-pages pushes — prevents race if two workflow_run events fire
+    # before the first has committed.
+    concurrency:
+      group: gh-pages-update
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          path: main
+
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: gh-pages
+          path: pages
+
+      - name: Download all digest artifacts from triggering run
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: digest-*
+          path: /tmp/digests
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to ghcr.io for skopeo inspect
+        run: |
+          # update-index.py calls skopeo inspect against ghcr.io.
+          # Login required even for public packages to avoid rate limiting and
+          # to handle the window before the package is set public after first push.
+          echo "${{ secrets.GITHUB_TOKEN }}" | \
+            skopeo login ghcr.io -u "${{ github.repository_owner }}" --password-stdin
+
+      - name: Update index for each app and arch
+        run: |
+          cd pages
+          shopt -s nullglob
+          for DIGEST_FILE in /tmp/digests/digest-*/digest.txt; do
+            # Extract app and arch from the artifact directory name: digest-<app>-<arch>
+            DIR=$(basename "$(dirname "${DIGEST_FILE}")")
+            # Strip leading "digest-" prefix, then split on the last "-" to get arch
+            REST="${DIR#digest-}"
+            ARCH="${REST##*-}"
+            APP="${REST%-${ARCH}}"
+            DIGEST=$(cat "${DIGEST_FILE}")
+            echo "==> Updating index: ${APP} ${ARCH} ${DIGEST}"
+            python3 ../main/scripts/update-index.py \
+              --app "${APP}" \
+              --digest "${DIGEST}" \
+              --registry ghcr.io \
+              --repo "${{ github.repository_owner }}/${APP}" \
+              --tags "latest"
+          done
+
+      - name: Commit and push index
+        run: |
+          cd pages
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin gh-pages && git rebase origin/gh-pages
+          git add index/static
+          if git diff --cached --quiet; then
+            echo "index unchanged, skipping commit"
+          else
+            git commit -m "chore(index): update from build ${{ github.event.workflow_run.run_number }} [skip ci]"
+            git push
+          fi

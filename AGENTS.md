@@ -32,7 +32,7 @@ flatpak-builder / bundle-repack (inside gnome-49 container, --privileged)
   → OSTree repo (.ostree-repo/)
   → flatpak build-bundle --oci (.<app>.oci/) — single flat layer
   → podman pull oci:... → IMAGE_ID (loads into podman store)
-  → chunkah (quay.io/jlebon/chunkah:v0.2.0, --mount=type=image) → CHUNKED_ID (N content-based layers)
+  → chunkah (coreos/chunkah via Containerfile.splitter, --mount=type=image) → CHUNKED_ID (N content-based layers)
   → skopeo copy → localhost:5000 (loop) or podman push zstd:chunked → ghcr.io (build/CI)
   → update-index.py → gh-pages branch index/static
 ```
@@ -79,7 +79,7 @@ Rules:
   `~/.cargo/bin/devaipod run ~/src/jorgehub --host -c 'just loop <app>'`
   The devcontainer must support privileged containers (`capAdd: SYS_ADMIN`) for nested podman
   in `just loop` / `just build` to work. Verify `devcontainer.json` before first run.
-- chunkah pin: `quay.io/jlebon/chunkah:v0.2.0` (pre-production — update when stable release ships)
+- chunkah pin: `coreos/chunkah` v0.2.0 — fetched as `Containerfile.splitter` from GitHub releases (not a container image); see `CHUNKAH_SPLITTER` env var in build.yml/backfill.yml; pin is managed by Renovate
 - chunkah layer count for goose (~200MB): ~30 layers from OSTree object store heuristics alone;
   xattr-based component hints deferred until repo has 3+ packages (see journal 20260306-184501-301)
 - **Flatpak install validation is mandatory after any OCI push (loop or build).** CI green is not
