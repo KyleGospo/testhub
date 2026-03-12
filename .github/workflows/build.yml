@@ -922,7 +922,7 @@ jobs:
         if: steps.arch-check.outputs.skip != 'true'
         run: |
           flatpak remote-add --system --if-not-exists testhub \
-            "https://projectbluefin.github.io/testhub/jorgehub.flatpakrepo"
+            "https://projectbluefin.github.io/testhub/testhub.flatpakrepo"
 
       - name: Install ${{ matrix.app }}
         if: steps.arch-check.outputs.skip != 'true'
