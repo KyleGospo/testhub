@@ -220,6 +220,47 @@ flatpak-builder-lint --exceptions --user-exceptions flatpaks/<app>/exceptions.js
 flatpak-builder-lint --exceptions --user-exceptions flatpaks/<app>/exceptions.json repo repo
 ```
 
+## Fixing agent PR contract
+
+When a runtime-update or build-failure issue is filed, the fixing agent works as follows:
+
+### Branch naming
+
+One branch per app, always:
+```
+raptor/runtime-<app-id>
+```
+
+Example: `raptor/runtime-io.github.DenysMb.Kontainer`
+
+### One PR per app
+
+- If no PR exists for the branch, create one: `raptor/runtime-<app-id>` → `main`
+- If a PR already exists (check with `gh pr list --head raptor/runtime-<app-id>`), push fix commits directly to the existing branch — do NOT open a new PR
+- Build failure fix iterations always go on the same branch/PR
+
+### Where to find context
+
+The **runtime-update issue** for an app is the source of truth for what needs to change. Its title is always `runtime-update: <app-id>`.
+
+The **build-failure issue** body contains:
+- The target branch name (explicit)
+- A link to the runtime-update issue (if one exists)
+- Instructions: push to the existing branch, not a new PR
+
+### What goes on the branch
+
+All of these must be committed to the same `raptor/runtime-<app-id>` branch:
+- Manifest fix (the primary change)
+- `skills/app-gotchas.md` update (if the fix reveals an app-specific quirk)
+- Any other `skills/` update (if the fix reveals a pipeline gap)
+- `flatpaks/<app>/exceptions.json` update (if new lint exceptions are needed)
+
+### Closing issues
+
+- Close the **build-failure issue** once the fix is merged and CI passes
+- Close the **runtime-update issue** once the runtime version is current and the build passes
+
 ## Container image provenance
 
 Build and install-test jobs use `ghcr.io/flathub-infra/flatpak-github-actions:gnome-49`.

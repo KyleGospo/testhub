@@ -274,23 +274,56 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TITLE="Build failure: ${{ matrix.app }} (${{ matrix.arch }})"
-          BODY="## Build failure: \`${{ matrix.app }}\` on \`${{ matrix.arch }}\`
+          APP="${{ matrix.app }}"
+          BRANCH="raptor/runtime-${APP}"
+          TITLE="Build failure: ${APP} (${{ matrix.arch }})"
+
+          # Find the open runtime-update issue for this app (if any)
+          RUNTIME_ISSUE=$(gh issue list \
+            --repo "${{ github.repository }}" \
+            --state open \
+            --search "runtime-update: ${APP}" \
+            --json number,title \
+            --jq "[.[] | select(.title | startswith(\"runtime-update: ${APP}\"))] | .[0].number // \"\"")
+          if [[ -n "${RUNTIME_ISSUE}" ]]; then
+            RUNTIME_LINK="**Runtime-update issue:** #${RUNTIME_ISSUE}"
+          else
+            RUNTIME_LINK=""
+          fi
+
+          # Determine the source branch (PR builds expose head_ref; push builds expose ref)
+          SOURCE_BRANCH="${{ github.head_ref }}"
+          if [[ -z "${SOURCE_BRANCH}" ]]; then
+            SOURCE_BRANCH="${{ github.ref_name }}"
+          fi
+
+          BODY="## Build failure: \`${APP}\` on \`${{ matrix.arch }}\`
 
           **Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           **Commit:** \`${{ github.sha }}\`
-          **Triggered by:** \`${{ github.event_name }}\`
+          **Triggered by:** \`${{ github.event_name }}\` on branch \`${SOURCE_BRANCH}\`
+          ${RUNTIME_LINK}
 
           The \`compile-oci\` job failed for this app/arch combination.
           Check the run link above for the full log output.
+
+          ## Fixing agent instructions
+
+          **Target branch:** \`${BRANCH}\`
+
+          If a PR for this branch already exists, push your fix commits directly to \`${BRANCH}\`.
+          Do NOT open a new PR — one PR per app, always.
+
+          If no PR exists yet, create one from \`${BRANCH}\` → \`main\`.
 
           ## Checklist for the fixing agent
 
           - [ ] Read the full build log and identify the root cause
           - [ ] Fix the issue (missing patch file, bad manifest field, lint exception, etc.)
-          - [ ] If the fix reveals an app-specific quirk (e.g. local patch files, finish-args oddities, appstream gaps), document it in \`skills/app-gotchas.md\` under a \`### ${{ matrix.app }}\` heading
-          - [ ] If the fix reveals a gap in the sync script or pipeline (e.g. patch files not fetched on import), update the relevant skill in \`skills/\`
-          - [ ] Add any new lint exceptions to \`flatpaks/${{ matrix.app }}/exceptions.json\`
+          - [ ] Commit fix to branch \`${BRANCH}\` (push to existing PR, or open a new one if none exists)
+          - [ ] If the fix reveals an app-specific quirk (e.g. local patch files, finish-args oddities, appstream gaps), document it in \`skills/app-gotchas.md\` under a \`### ${APP}\` heading — commit to same branch
+          - [ ] If the fix reveals a gap in the sync script or pipeline (e.g. patch files not fetched on import), update the relevant skill in \`skills/\` — commit to same branch
+          - [ ] Add any new lint exceptions to \`flatpaks/${APP}/exceptions.json\`
           - [ ] Close this issue once the fix is merged and the build passes"
 
           # Avoid duplicate issues: check if an open issue with the same title exists
