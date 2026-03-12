@@ -706,7 +706,11 @@ jobs:
   # ── Merge per-arch digests into a single OCI image index ─────────────────
   publish-manifest-list:
     needs: [diff-changed-apps, sign-and-push]
-    if: needs.diff-changed-apps.outputs.apps != '[]' && needs.diff-changed-apps.outputs.apps != '' && github.event_name != 'pull_request'
+    if: |
+      needs.diff-changed-apps.outputs.apps != '[]' &&
+      needs.diff-changed-apps.outputs.apps != '' &&
+      github.event_name != 'pull_request' &&
+      !cancelled()
     runs-on: ubuntu-24.04
     permissions:
       packages: write
@@ -905,7 +909,11 @@ jobs:
   # workflow when needed.
   annotate-packages:
     needs: [diff-changed-apps, sign-and-push, publish-manifest-list]
-    if: needs.diff-changed-apps.outputs.apps != '[]' && needs.diff-changed-apps.outputs.apps != '' && github.event_name != 'pull_request'
+    if: |
+      needs.diff-changed-apps.outputs.apps != '[]' &&
+      needs.diff-changed-apps.outputs.apps != '' &&
+      github.event_name != 'pull_request' &&
+      !cancelled()
     runs-on: ${{ matrix.runner || 'ubuntu-24.04' }}
     permissions:
       packages: write
@@ -966,7 +974,11 @@ jobs:
   # if install-test passes.
   e2e-install:
     needs: [diff-changed-apps, publish-manifest-list]
-    if: needs.diff-changed-apps.outputs.apps != '[]' && needs.diff-changed-apps.outputs.apps != '' && github.event_name != 'pull_request'
+    if: |
+      needs.diff-changed-apps.outputs.apps != '[]' &&
+      needs.diff-changed-apps.outputs.apps != '' &&
+      github.event_name != 'pull_request' &&
+      !cancelled()
     runs-on: ${{ matrix.runner || 'ubuntu-24.04' }}
     permissions:
       packages: read
@@ -1035,7 +1047,7 @@ jobs:
         if: steps.arch-check.outputs.skip != 'true'
         run: |
           flatpak remote-add --system --if-not-exists testhub \
-            "https://projectbluefin.github.io/testhub/testhub.flatpakrepo"
+            oci+https://projectbluefin.github.io/testhub
 
       - name: Install ${{ matrix.app }}
         if: steps.arch-check.outputs.skip != 'true'
