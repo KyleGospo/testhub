@@ -38,7 +38,9 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 # Use token only for flathub/ and testhub API calls; flatpak-tracker is public
 # and a repo-scoped GITHUB_TOKEN may be rejected cross-org, returning empty results.
 HEADERS = {"Authorization": f"Bearer {GITHUB_TOKEN}"} if GITHUB_TOKEN else {}
-HEADERS_PUBLIC = {}  # no auth — for cross-org public repos (ublue-os/flatpak-tracker)
+HEADERS_PUBLIC = {
+    "User-Agent": "testhub-sync/1.0 (github.com/projectbluefin/testhub)"
+}  # no auth — for cross-org public repos (ublue-os/flatpak-tracker)
 
 
 def get_tracker_issues(state: str) -> list[dict]:
