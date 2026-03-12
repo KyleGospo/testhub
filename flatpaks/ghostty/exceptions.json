@@ -3,6 +3,7 @@
         "appid-filename-mismatch",
         "finish-args-unnecessary-xdg-config-ghostty-ro-access",
         "finish-args-flatpak-spawn-access",
+        "metainfo-missing-screenshots",
         "appstream-screenshots-not-mirrored-in-ostree",
         "appstream-no-flathub-manifest-key",
         "appstream-external-screenshot-url"

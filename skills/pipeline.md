@@ -202,9 +202,22 @@ These errors fire on every manifest.yaml app in testhub (not Flathub-specific be
 | `appstream-screenshots-not-mirrored-in-ostree` | No `--mirror-screenshots-url` passed; not required outside Flathub |
 | `appstream-no-flathub-manifest-key` | `flathub::manifest` custom tag only required for Flathub submissions |
 | `appstream-external-screenshot-url` | Same root cause as above — screenshots not mirrored |
+| `metainfo-missing-screenshots` | Personal hosting repo — no screenshots maintained here |
 
-Add these three to `exceptions.json` for every manifest.yaml app. If CI surfaces additional
-errors after first run, add them to exceptions.json with a comment explaining why.
+Add these **four** to `exceptions.json` for every manifest.yaml app.
+
+#### Per-app additional exceptions
+
+Some apps trigger additional errors due to missing metainfo fields. Suppress rather than
+maintain upstream metadata we don't control:
+
+| Exception | App | Reason |
+|---|---|---|
+| `appstream-missing-developer-name` | firefox-nightly, thunderbird-nightly | No `<developer>` tag in upstream metainfo |
+
+If CI surfaces new errors after first run, add them to `exceptions.json` and document here.
+Do not add metainfo fields we cannot keep accurate (developer name, screenshots, VCS URLs) —
+suppress via exceptions instead.
 
 #### Running locally
 

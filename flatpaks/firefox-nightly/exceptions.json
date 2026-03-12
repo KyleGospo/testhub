@@ -5,6 +5,8 @@
         "finish-args-own-name-wildcard-org.mozilla.firefox",
         "finish-args-own-name-wildcard-org.mozilla.firefox_beta",
         "manifest-unknown-properties",
+        "metainfo-missing-screenshots",
+        "appstream-missing-developer-name",
         "appstream-screenshots-not-mirrored-in-ostree",
         "appstream-no-flathub-manifest-key",
         "appstream-external-screenshot-url"
