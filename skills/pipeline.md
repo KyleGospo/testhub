@@ -187,6 +187,15 @@ To run with exceptions (suppresses specific named checks):
 flatpak-builder-lint --exceptions --user-exceptions "flatpaks/<app>/exceptions.json" manifest "flatpaks/<app>/manifest.yaml"
 ```
 
+## Container image provenance
+
+Build and install-test jobs use `ghcr.io/flathub-infra/flatpak-github-actions:gnome-49`.
+
+**Important:** `flathub-infra/flatpak-github-actions` was **archived** (deprecated April 24, 2025).
+Images are now served from `flathub-infra/actions-images` but the `ghcr.io` image path and
+tags remain stable. The `gnome-49` tag continues to work. Renovate does not manage this tag —
+update manually when a newer GNOME SDK version is required.
+
 ## Simplicity rule
 
 Tools available in gnome-49 and ubuntu-24.04 runners: `yq`, `jq`, `python3`, `curl`,

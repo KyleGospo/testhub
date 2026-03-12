@@ -12,6 +12,21 @@ Per-app known issues and workarounds. Each app has a dedicated `GOTCHAS.md` in i
 | thunderbird-nightly | `flatpaks/thunderbird-nightly/GOTCHAS.md` | x86_64 only (no aarch64), comm-central icon pinning — verify each size sha256 independently (swap of 32/64 was a bug), `--persist=.thunderbird-nightly` profile isolation, no BaseApp pre-install needed, extension stubs created in build-commands (not cleanup-commands) |
 | virtualbox | `flatpaks/virtualbox/GOTCHAS.md` | KVM backend (no vboxdrv kernel module), X11 only (VBoxSVGA Wayland bug), hardening disabled, gsoap serial build, shared-modules SDL1+GLU inlined |
 
+## Flatpak install scope — always system-wide
+
+When installing any app for manual testing or validation, always install system-wide.
+Never pass `--user`.
+
+```bash
+# Correct
+flatpak install <remote> <app-id>
+
+# Wrong — never use --user
+flatpak --user install <remote> <app-id>
+```
+
+If an upstream doc or CI example uses `--user`, ignore it and use system-wide instead.
+
 ## bundle-repack apps: no metainfo injection
 
 The `release.yaml` pipeline downloads a pre-built upstream `.flatpak` and repackages it as

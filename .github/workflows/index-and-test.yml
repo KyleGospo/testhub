@@ -1,0 +1,192 @@
+name: Update Index and Install Test
+
+# Triggered after each "Build Flatpak OCI" run completes successfully.
+# Running as a separate workflow serialises all gh-pages pushes — no race
+# between concurrent app builds writing to the same branch.
+
+on:
+  workflow_run:
+    workflows: ["Build Flatpak OCI"]
+    types: [completed]
+
+# Top-level: deny all. Each job declares only what it needs.
+permissions: {}
+
+jobs:
+  update-index:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      (github.event.workflow_run.event == 'push' ||
+       github.event.workflow_run.event == 'merge_group' ||
+       github.event.workflow_run.event == 'workflow_dispatch')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      packages: read
+      actions: read
+    # Serialise gh-pages pushes — prevents race if two workflow_run events fire
+    # before the first has committed.
+    concurrency:
+      group: gh-pages-update
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          path: main
+
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: gh-pages
+          path: pages
+
+      - name: Download all digest artifacts from triggering run
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: digest-*
+          path: /tmp/digests
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to ghcr.io for skopeo inspect
+        run: |
+          # update-index.py calls skopeo inspect against ghcr.io.
+          # Login required even for public packages to avoid rate limiting and
+          # to handle the window before the package is set public after first push.
+          echo "${{ secrets.GITHUB_TOKEN }}" | \
+            skopeo login ghcr.io -u "${{ github.repository_owner }}" --password-stdin
+
+      - name: Sync gh-pages before writing
+        run: |
+          cd pages
+          git fetch origin gh-pages && git rebase origin/gh-pages
+
+      - name: Update index for each app and arch
+        run: |
+          cd pages
+          shopt -s nullglob
+          for DIGEST_FILE in /tmp/digests/digest-*/digest.txt; do
+            # Extract app and arch from the artifact directory name: digest-<app>-<arch>
+            DIR=$(basename "$(dirname "${DIGEST_FILE}")")
+            # Strip leading "digest-" prefix, then split on the last "-" to get arch
+            REST="${DIR#digest-}"
+            ARCH="${REST##*-}"
+            APP="${REST%-${ARCH}}"
+            DIGEST=$(cat "${DIGEST_FILE}")
+            echo "==> Updating index: ${APP} ${ARCH} ${DIGEST}"
+            python3 ../main/scripts/update-index.py \
+              --app "${APP}" \
+              --digest "${DIGEST}" \
+              --registry ghcr.io \
+              --repo "${{ github.repository }}/${APP}" \
+              --tags "latest"
+          done
+
+      - name: Commit and push index
+        run: |
+          cd pages
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index/static
+          if git diff --cached --quiet; then
+            echo "index unchanged, skipping commit"
+          else
+            git commit -m "chore(index): update from build ${{ github.event.workflow_run.run_number }} [skip ci]"
+            git push
+          fi
+
+  # ── Install test ─────────────────────────────────────────────────────────────
+  # Runs AFTER update-index so the gh-pages index is up to date before we try
+  # to install from it.  Tests each app on both native arches (matrix), skipping
+  # arches not listed in the app's arches / x-arches field.
+  #
+  # Launch check: `timeout 5 flatpak run <app-id>`
+  #   exit 0   → app ran and exited cleanly         → PASS
+  #   exit 124 → app launched but didn't self-exit  → PASS (headless GUI apps)
+  #   other    → launch failed                      → FAIL
+  #
+  # When exit 124, a hint is emitted suggesting the app could benefit from an
+  # x-launch-check field (e.g. --version) for a cleaner headless smoke test.
+  install-test:
+    needs: update-index
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      (github.event.workflow_run.event == 'push' ||
+       github.event.workflow_run.event == 'merge_group' ||
+       github.event.workflow_run.event == 'workflow_dispatch')
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      packages: read
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-49
+      options: --privileged
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [ghostty, goose, lmstudio, firefox-nightly, thunderbird-nightly, virtualbox]
+        arch: [x86_64, aarch64]
+        include:
+          - arch: x86_64
+            runner: ubuntu-24.04
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+        exclude:
+          # x86_64-only apps (release.yaml arches: [x86_64])
+          - app: goose
+            arch: aarch64
+          - app: lmstudio
+            arch: aarch64
+          - app: thunderbird-nightly
+            arch: aarch64
+          - app: virtualbox
+            arch: aarch64
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Read app-id from manifest
+        id: app-meta
+        run: |
+          if [[ -f "flatpaks/${{ matrix.app }}/release.yaml" ]]; then
+            APP_ID=$(python3 -c "import yaml,sys; d=yaml.safe_load(open(sys.argv[1])); print(d['app-id'])" \
+              "flatpaks/${{ matrix.app }}/release.yaml")
+          elif [[ -f "flatpaks/${{ matrix.app }}/manifest.yaml" ]]; then
+            APP_ID=$(python3 -c "import yaml,sys; d=yaml.safe_load(open(sys.argv[1])); print(d['app-id'])" \
+              "flatpaks/${{ matrix.app }}/manifest.yaml")
+          else
+            echo "ERROR: no release.yaml or manifest.yaml for ${{ matrix.app }}" >&2
+            exit 1
+          fi
+          echo "app_id=${APP_ID}" >> "$GITHUB_OUTPUT"
+
+      - name: Add testhub remote
+        run: |
+          flatpak remote-add --system --if-not-exists testhub \
+            "https://projectbluefin.github.io/testhub/jorgehub.flatpakrepo"
+
+      - name: Install ${{ matrix.app }}
+        run: |
+          flatpak install --system --noninteractive testhub \
+            "${{ steps.app-meta.outputs.app_id }}"
+
+      - name: Launch check ${{ matrix.app }}
+        run: |
+          APP_ID="${{ steps.app-meta.outputs.app_id }}"
+          set +e
+          timeout 5 flatpak run "${APP_ID}"
+          EXIT=$?
+          set -e
+          if [[ "${EXIT}" -eq 0 ]]; then
+            echo "==> PASS: ${APP_ID} ran and exited cleanly (exit 0)"
+          elif [[ "${EXIT}" -eq 124 ]]; then
+            echo "==> PASS: ${APP_ID} launched successfully (exit 124 — timed out, app did not self-exit)"
+            echo "    HINT: consider adding x-launch-check: [--version] to the app manifest for"
+            echo "    a cleaner headless smoke test command (e.g. 'flatpak run ${APP_ID} --version')."
+          else
+            echo "ERROR: ${APP_ID} launch failed (exit ${EXIT})" >&2
+            exit 1
+          fi
+
+      - name: Uninstall ${{ matrix.app }}
+        if: always()
+        run: |
+          flatpak uninstall --system --noninteractive \
+            "${{ steps.app-meta.outputs.app_id }}" || true

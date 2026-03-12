@@ -33,6 +33,20 @@ that area.
 When triggering a manual test build, always use `goose` (bundle-repack, fastest — no compile step).
 Never use `ghostty` for test builds (full Zig compile via flatpak-builder, very slow).
 
+## Flatpak installation policy
+
+Always install Flatpaks system-wide. Never use `--user`.
+
+```bash
+# Correct
+flatpak install <remote> <app-id>
+
+# Wrong — never use --user
+flatpak --user install <remote> <app-id>
+```
+
+This applies to all install operations: manual testing, validation steps, CI validation containers, and any instructions written in skills or documentation. If an upstream doc says `--user`, ignore it and use system-wide.
+
 ## Skill usage — mandatory
 
 **Load the relevant skill before touching any file in its domain.** This is not optional.
