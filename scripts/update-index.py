@@ -99,7 +99,7 @@ def main():
     parser.add_argument("--registry", default="ghcr.io")
     parser.add_argument(
         "--repo",
-        required=True,
+        required=False,
         help="Full repo path in registry (e.g. owner/reponame/appname)",
     )
     parser.add_argument("--tls-verify", action="store_true", default=True)
@@ -113,6 +113,8 @@ def main():
         print(f"index/static: valid JSON, {len(data.get('Results', []))} result(s)")
         return
 
+    if not args.repo:
+        parser.error("--repo is required when not using --validate")
     if not args.app or not args.digest:
         parser.error("--app and --digest are required")
 

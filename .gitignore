@@ -7,6 +7,10 @@
 *.flatpak
 /tmp/
 
+# Token/credential files — never commit
+.token
+*.token
+
 # Large upstream binaries — never commit
 *.deb
 *.AppImage
