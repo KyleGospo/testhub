@@ -175,16 +175,43 @@ curl -sL "<url>" | sha256sum
 Do not copy-paste sha256 values across icon sizes — the values are not interchangeable and
 a swap causes a silent build failure (download succeeds but verification fails).
 
-### Checking errors vs exceptions
+### builddir and repo lint (post-build, flatpak-builder path only)
 
-To see all current lint errors for an app:
-```bash
-flatpak-builder-lint manifest "flatpaks/<app>/manifest.yaml"
-```
+`build.yml` runs two additional lint modes after `flatpak-builder` completes, before OCI export.
+These only apply to manifest.yaml apps (ghostty, firefox-nightly). Bundle-repack apps (goose,
+lmstudio) do not produce a flatpak-builder staging directory or OSTree repo, so these modes
+cannot run on them.
 
-To run with exceptions (suppresses specific named checks):
+**`flatpak-builder-lint builddir flatpak_app`** — checks the staging build directory. Key
+checks: appstream catalog present, desktop file valid, icon installed, ELF arch matches.
+Path `flatpak_app` is the default `build-dir` from flatpak/flatpak-github-actions v6.
+
+**`flatpak-builder-lint repo repo`** — checks the exported OSTree repository. Key checks:
+OSTree ref shape, appstream catalog in OSTree, screenshot mirroring. Path `repo` is the
+default `repo-dir` from flatpak/flatpak-github-actions v6. This is the same check Flathub
+runs on all production builds.
+
+Both steps use the same `exceptions.json` file as the manifest lint step.
+
+#### Required exceptions for non-Flathub repos
+
+These errors fire on every manifest.yaml app in testhub (not Flathub-specific behavior):
+
+| Exception | Reason |
+|---|---|
+| `appstream-screenshots-not-mirrored-in-ostree` | No `--mirror-screenshots-url` passed; not required outside Flathub |
+| `appstream-no-flathub-manifest-key` | `flathub::manifest` custom tag only required for Flathub submissions |
+| `appstream-external-screenshot-url` | Same root cause as above — screenshots not mirrored |
+
+Add these three to `exceptions.json` for every manifest.yaml app. If CI surfaces additional
+errors after first run, add them to exceptions.json with a comment explaining why.
+
+#### Running locally
+
 ```bash
-flatpak-builder-lint --exceptions --user-exceptions "flatpaks/<app>/exceptions.json" manifest "flatpaks/<app>/manifest.yaml"
+# After a local build that produced flatpak_app/ and repo/:
+flatpak-builder-lint --exceptions --user-exceptions flatpaks/<app>/exceptions.json builddir flatpak_app
+flatpak-builder-lint --exceptions --user-exceptions flatpaks/<app>/exceptions.json repo repo
 ```
 
 ## Container image provenance

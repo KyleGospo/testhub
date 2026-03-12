@@ -172,6 +172,31 @@ jobs:
           cache-key: flatpak-${{ matrix.app }}-${{ matrix.arch }}-${{ hashFiles(format('flatpaks/{0}/manifest.yaml', matrix.app)) }}
           branch: ${{ steps.manifest-meta.outputs.branch }}
 
+      - name: Lint build directory (flatpak-builder path)
+        if: steps.detect-path.outputs.mode == 'flatpak-builder' && steps.detect-path.outputs.skip != 'true'
+        run: |
+          # flatpak-builder-lint builddir checks the build staging dir after build but before
+          # OSTree export: appstream catalog present, desktop file valid, icon installed, ELF arch.
+          # build-dir defaults to flatpak_app (flatpak/flatpak-github-actions v6 default).
+          EXCEPTIONS_FILE="flatpaks/${{ matrix.app }}/exceptions.json"
+          if [ -f "${EXCEPTIONS_FILE}" ]; then
+            flatpak-builder-lint --exceptions --user-exceptions "${EXCEPTIONS_FILE}" builddir flatpak_app
+          else
+            flatpak-builder-lint builddir flatpak_app
+          fi
+
+      - name: Lint OSTree repo (flatpak-builder path)
+        if: steps.detect-path.outputs.mode == 'flatpak-builder' && steps.detect-path.outputs.skip != 'true'
+        run: |
+          # flatpak-builder-lint repo checks the exported OSTree repository: ref shape, appstream
+          # catalog in OSTree, screenshot mirroring. repo-dir defaults to repo (v6 default).
+          EXCEPTIONS_FILE="flatpaks/${{ matrix.app }}/exceptions.json"
+          if [ -f "${EXCEPTIONS_FILE}" ]; then
+            flatpak-builder-lint --exceptions --user-exceptions "${EXCEPTIONS_FILE}" repo repo
+          else
+            flatpak-builder-lint repo repo
+          fi
+
       - name: Export OCI bundle (flatpak-builder path)
         if: steps.detect-path.outputs.mode == 'flatpak-builder' && steps.detect-path.outputs.skip != 'true'
         run: |

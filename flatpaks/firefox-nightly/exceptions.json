@@ -4,6 +4,9 @@
         "finish-args-unnecessary-xdg-config-gtk-3.0-ro-access",
         "finish-args-own-name-wildcard-org.mozilla.firefox",
         "finish-args-own-name-wildcard-org.mozilla.firefox_beta",
-        "manifest-unknown-properties"
+        "manifest-unknown-properties",
+        "appstream-screenshots-not-mirrored-in-ostree",
+        "appstream-no-flathub-manifest-key",
+        "appstream-external-screenshot-url"
     ]
 }
