@@ -1,5 +1,5 @@
 [Flatpak Repo]
-Title=jorgehub
-Description=Personal OCI Flatpak repository
+Title=testhub
+Description=Personal OCI Flatpak repository for projectbluefin/testhub
 Url=oci+https://projectbluefin.github.io/testhub
 Homepage=https://github.com/projectbluefin/testhub
